@@ -10,6 +10,8 @@ import os
 import sqlite3
 import requests
 from fastapi.responses import HTMLResponse
+from config.platforms import PLATFORM_CONFIGS
+from config.models import MODEL_CONFIGS
 
 # Connect to database
 conn = sqlite3.connect('logs.db')
@@ -44,9 +46,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-llm = Llama(
-    model_path="qwen2-7b-instruct-q4_k_m.gguf",
+model_path = MODEL_CONFIGS["qwen2-7b"]["path"]
+small_llm = Llama(
+    model_path=model_path,
 )
 
 class CompletionRequest(BaseModel):
@@ -64,29 +66,15 @@ class CompletionResponse(BaseModel):
     usage: dict
 
 @app.post("/completion", response_model=CompletionResponse)
-async def generate_completion(request: CompletionRequest):
-    
-    # YES/NO smaller model for single tweet
-    prompt_instructions = """I have a JSON file of tweets. For each tweet, return YES if it mentions:
-    •	New developments in AI agents.
-	•	Releases of new LLMs (e.g., ChatGPT, Claude, v0, Cursor) or updates from OpenAI/Anthropic
-	•	Announcements of models outperforming others or setting new benchmarks or AI Agents
-    •   Announcements related to finance, quant or research papers or algorithmic trading
- 
-	Exclude any tweets about courses, tutorials, or general discussions. Return NO for all other tweets."""
+async def generate_completion(request: CompletionRequest):    
     try:
-        prompt = f"""<|im_start|>system
-    You are Tweet Filterer, an AI system that followes the rules for tweets.:
-    {prompt_instructions}
-    Follow the above instructions and return YES or NO.
-    <|im_end|>
-    <|im_start|>user
-    Tweet: {request.prompt}
-    <|im_end|>
-    <|im_start|>assistant"""
+        prompt_template = PLATFORM_CONFIGS["twitter"].filter_prompt
+        formatted_prompt = prompt_template.format(
+            content=request.prompt
+        )
             
-        output = llm(
-            prompt=prompt,
+        output = small_llm(
+            prompt=formatted_prompt,
             max_tokens=request.max_tokens,
             stop=request.stop,
             echo=request.echo,
@@ -111,7 +99,6 @@ async def generate_completion(request: CompletionRequest):
             usage=output.get('usage', {})
         )
     except Exception as e:
-        # Log the error
         log_response(str(e), "error")
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -145,8 +132,8 @@ async def get_tweet_logs():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/analyze", response_class=HTMLResponse)
-async def analyze_tweets():
+@app.get("/analyze/{platform}", response_class=HTMLResponse)
+async def analyze_tweets(platform: str = "twitter"):
     """Analyze AI-related tweets and provide a summary of key developments."""
     try:
         tweets = await get_tweet_logs()
@@ -160,38 +147,17 @@ async def analyze_tweets():
             for t in tweets
         ])
         
-        analysis_prompt = f"""<|im_start|>system
-You are an AI Industry Analyst who extracts key developments from AI-related tweets. Focus only on significant updates about:
-- New AI models and capabilities
-- Major releases from AI companies
-- Performance breakthroughs and benchmarks
-
-For each significant development, provide:
-SUMMARY: One-line description of the key development
-BY: The Twitter username
-URL: The full tweet URL provided in parentheses
-
-Skip any tweets that are about tutorials, courses, or general discussions.
-Format multiple findings as separate entries with a blank line between them.
-<|im_end|>
-<|im_start|>user
-Analyze these tweets and extract the key developments:
-
-{tweets_text}
-<|im_end|>
-<|im_start|>assistant
-I'll analyze the tweets and present each significant finding in this format:
-
-SUMMARY: [key development]
-BY: [username]
-URL: [url]
-"""
-
+        prompt_template = PLATFORM_CONFIGS["twitter"].analysis_prompt
+        analysis_prompt = prompt_template.format(
+            content=tweets_text
+        )
+        model_name = MODEL_CONFIGS["qwen2-72b"]["name"]
+        model_url = MODEL_CONFIGS["qwen2-72b"]["url"]
         # Use requests to call Ollama API
         response = requests.post(
-            "http://localhost:11434/api/generate",
+            model_url,
             json={
-                "model": "qwen2:72b-instruct-q4_K_S",
+                "model": model_name,
                 "prompt": analysis_prompt,
                 "stream": False
             }
@@ -213,7 +179,7 @@ URL: [url]
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-def start_server(host="0.0.0.0", port=8000):
+def start_server(host="0.0.0.0", port=PLATFORM_CONFIGS["twitter"].port):
     uvicorn.run(app, host=host, port=port)
 
 if __name__ == "__main__":

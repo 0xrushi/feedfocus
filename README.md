@@ -1,6 +1,6 @@
 # FeedFocus: Turn Endless Feeds into Quick Insights
 
-Are you tired of losing hours to endless scrolling on Twitter, LinkedIn, or Reddit? FeedFocus simplifies your day by curating and summarizing the content that matters most to you. Stay updated on AI breakthroughs, industry trends, and niche discussions—all without the noise.
+Are you tired of losing hours to endless scrolling on Twitter? FeedFocus simplifies your day by curating and summarizing the content that matters most to you. Stay updated on AI breakthroughs, industry trends, and niche discussions—all without the noise.
 
 Reclaim your time: FeedFocus transforms hours of browsing into just minutes of actionable updates.
 

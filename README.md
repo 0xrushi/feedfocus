@@ -42,11 +42,14 @@ Update the configuration files:
 
 ### 4. Install Browser Extension
 
-Install the Tampermonkey extension for Chrome.
+Install the [Tampermonkey](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) extension for Chrome.
 
 •	Copy the script from userscripts/v3.js.
 
 •	Paste it into a new script in Tampermonkey and enable it.
+
+![image](https://github.com/user-attachments/assets/72eb03bd-faa9-4511-ad7b-13ccd83de621)
+![image](https://github.com/user-attachments/assets/fcf4b57c-d28c-47d1-aabe-31609a01d8dd)
 
 ### 5. Run the Server
 

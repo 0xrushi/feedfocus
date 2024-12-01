@@ -66,3 +66,7 @@ Or run the below script to automatically press pagedown
 ```
 python press_pgdown.py
 ```
+
+## Demo GIF
+![output](https://github.com/user-attachments/assets/877fcdb9-14be-424d-a62b-71fb23b30b41)
+

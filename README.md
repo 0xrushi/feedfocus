@@ -70,3 +70,11 @@ python press_pgdown.py
 ## Demo GIF
 ![output](https://github.com/user-attachments/assets/877fcdb9-14be-424d-a62b-71fb23b30b41)
 
+#### Anthropic Claude
+![image](https://github.com/user-attachments/assets/2cd3ca19-5738-42bd-8f43-da22145fc009)
+
+#### Qwen2 72b 4bit gguf
+![image](https://github.com/user-attachments/assets/9a830f81-7143-4f56-af1d-85ba2de3cb7a)
+
+
+

@@ -81,4 +81,6 @@ python press_pgdown.py
 ![image](https://github.com/user-attachments/assets/9a830f81-7143-4f56-af1d-85ba2de3cb7a)
 
 
+### mixtral-8x7b-32768 on Groq
+![image](https://github.com/user-attachments/assets/784cb3a5-782b-451c-b63d-288aea8e15ef)
 

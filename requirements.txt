@@ -1,6 +1,9 @@
 fastapi==0.115.5
 langchain==0.3.9
+langchain_core==0.3.21
+langchain_groq==0.2.1
 PyAutoGUI==0.9.54
 pydantic==2.10.2
+python-dotenv==1.0.1
 Requests==2.32.3
 uvicorn==0.32.1

@@ -48,7 +48,6 @@ For each important development, structure your response as:
 SUMMARY: [Concise description of the key development]
 SOURCE: [Twitter username]
 LINK: [Tweet URL]
-IMPACT: [Brief note on significance]
 
 Skip any content about tutorials, courses, or general discussions.
 Separate multiple findings with blank lines.

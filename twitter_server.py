@@ -1,23 +1,23 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from llama_cpp import Llama
 from typing import Optional, List, Union
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
-import csv
-from datetime import datetime
-import os
 import sqlite3
+from datetime import datetime, timedelta
+import os
 import requests
 from fastapi.responses import HTMLResponse
 from config.platforms import PLATFORM_CONFIGS
-from config.models import MODEL_CONFIGS
+from langchain_groq import ChatGroq
+from langchain_core.messages import HumanMessage
+from dotenv import load_dotenv
 
-# Connect to database
+load_dotenv()
+
 conn = sqlite3.connect('logs.db')
 cursor = conn.cursor()
 
-# Create table with unique constraint on tweet
 cursor.execute('''
     CREATE TABLE IF NOT EXISTS logs (
         id TEXT,
@@ -36,7 +36,19 @@ def insert_log(id, tweet, user_name, model_response, tweet_url=None):
     ''', (id, tweet, user_name, model_response, tweet_url))
     conn.commit()
 
-app = FastAPI(title="Llama API")
+def tweet_exists(tweet_text: str):
+    """
+    Check if a tweet with the given text exists in the logs table.
+    Args:
+        tweet_text: The text content of the tweet to check
+    Returns:
+        bool: True if tweet exists, False otherwise
+    """
+    cursor.execute('SELECT EXISTS(SELECT 1 FROM logs WHERE tweet = ?)', (tweet_text,))
+    result = cursor.fetchone()[0]
+    return bool(result)
+
+app = FastAPI(title="Groq API")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -46,9 +58,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-model_path = MODEL_CONFIGS["qwen2-7b"]["path"]
-small_llm = Llama(
-    model_path=model_path,
+llm = ChatGroq(
+    api_key=os.environ["GROQ_API_KEY"],
+    model_name="mixtral-8x7b-32768"
 )
 
 class CompletionRequest(BaseModel):
@@ -72,56 +84,54 @@ async def generate_completion(request: CompletionRequest):
         formatted_prompt = prompt_template.format(
             content=request.prompt
         )
+        
+        if not tweet_exists(request.prompt):
+            messages = [HumanMessage(content=formatted_prompt)]
+            response = llm.invoke(messages)
             
-        output = small_llm(
-            prompt=formatted_prompt,
-            max_tokens=request.max_tokens,
-            stop=request.stop,
-            echo=request.echo,
-            temperature=request.temperature,
-            top_p=request.top_p
-        )
+            response_text = response.content
+            
+            is_ai_related = "YES" in response_text.strip().upper()
+            
+            insert_log(
+                datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
+                request.prompt, 
+                request.user_name, 
+                is_ai_related,
+                request.tweet_url
+            )
         
-        response_text = output['choices'][0]['text']
-        
-        is_ai_related = "YES" in response_text.strip().upper()
-        
-        insert_log(
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'), 
-            request.prompt, 
-            request.user_name, 
-            is_ai_related,
-            request.tweet_url
-        )
-        
+            return CompletionResponse(
+                text=response_text,
+                usage={"prompt_tokens": None, "completion_tokens": None, "total_tokens": None}
+            )
         return CompletionResponse(
-            text=response_text,
-            usage=output.get('usage', {})
-        )
+                text="Tweet already present",
+                usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+            )
     except Exception as e:
-        log_response(str(e), "error")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/health")
 async def health_check():
-    # Log health check
-    log_response("Health check performed", "health_check")
-    return {"status": "healthy", "model": "qwen2-7b-instruct"}
-
+    return {"status": "healthy", "model": "mixtral-8x7b-32768"}
 
 @app.get("/logs")
 async def get_tweet_logs():
-    """Retrieve tweet logs with optional filtering for AI-related tweets."""
+    """Retrieve tweet logs from the last 24 hours that are AI-related."""
     try:
         conn = sqlite3.connect('logs.db')
         cursor = conn.cursor()
+        
+        one_day_ago = (datetime.now() - timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
         
         cursor.execute('''
             SELECT id, tweet, response, user_name, tweet_url
             FROM logs
             WHERE response = 1
+            AND id >= ?
             ORDER BY id DESC
-        ''')
+        ''', (one_day_ago,))
         
         columns = ['id', 'tweet', 'response', 'user_name', 'tweet_url']
         results = [dict(zip(columns, row)) for row in cursor.fetchall()]
@@ -141,7 +151,6 @@ async def analyze_tweets(platform: str = "twitter"):
         if not tweets:
             return "<div class='analysis-container'>Nothing much interesting found.</div>"
             
-        # Prepare tweets text - don't encode URLs
         tweets_text = "\n".join([
             f"Tweet by {t['user_name']}: {t['tweet']} (URL: {t['tweet_url'] or 'N/A'})"
             for t in tweets
@@ -151,21 +160,11 @@ async def analyze_tweets(platform: str = "twitter"):
         analysis_prompt = prompt_template.format(
             content=tweets_text
         )
-        model_name = MODEL_CONFIGS["qwen2-72b"]["name"]
-        model_url = MODEL_CONFIGS["qwen2-72b"]["url"]
-        # Use requests to call Ollama API
-        response = requests.post(
-            model_url,
-            json={
-                "model": model_name,
-                "prompt": analysis_prompt,
-                "stream": False
-            }
-        )
+
+        messages = [HumanMessage(content=analysis_prompt)]
+        result = llm.invoke(messages)
         
-        result = response.json()
-        summary = result.get('response', '').strip()
-        
+        summary = result.content.strip()
         formatted_summary = summary.replace('\n', '<br>')
         formatted_summary = formatted_summary.replace('&lt;', '<').replace('&gt;', '>')
         

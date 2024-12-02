@@ -7,3 +7,4 @@ chrome_extension/.parcel-cache
 logs.db
 __pycache__
 data/qwen2-7b-instruct-q4_k_m.gguf
+.env

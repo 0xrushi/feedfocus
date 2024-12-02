@@ -1,104 +1,84 @@
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-from langchain.prompts import PromptTemplate
+from langchain.prompts import PromptTemplate, ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
 @dataclass
 class PlatformConfig:
     """Configuration for a specific platform's content analysis"""
-    filter_prompt: PromptTemplate
-    analysis_prompt: PromptTemplate
+    filter_prompt: ChatPromptTemplate
+    analysis_prompt: ChatPromptTemplate
     port: int
     recommended_models: Dict[str, str]
 
 class PromptTemplates:
     """Base templates for content filtering and analysis"""
     
-    BASE_FILTER = """<|im_start|>system
-You are a {platform} Content Filter, an AI system that follows these rules:
-{filter_rules}
-Follow the above instructions and return YES or NO.
-<|im_end|>
-<|im_start|>user
-{content_type}: {content}
-<|im_end|>
-<|im_start|>assistant"""
+    BASE_FILTER_SYSTEM = """You are a Twitter content classifier focused on AI industry developments.
+Your task is to identify tweets about significant AI developments by returning only YES or NO.
 
-    BASE_ANALYSIS = """<|im_start|>system
-You are an AI Industry Analyst who analyzes {platform} content about AI developments. Focus on:
-{analysis_focus}
+Include tweets about:
+- New AI model releases or major updates (e.g., GPT-4, Claude 3, Gemini)
+- Significant AI agent developments or breakthroughs
+- AI performance benchmarks and competition results
+- AI in finance, quantitative research, or algorithmic trading
+- Research paper announcements with notable findings
 
-For each significant development, provide:
-{output_format}
+Exclude tweets about:
+- Tutorials or educational content
+- General AI discussions
+- Personal opinions without news
+- Marketing or promotional content
+"""
 
-Skip any {content_type} that are about {exclude_content}.
-Format multiple findings as separate entries with a blank line between them.
-<|im_end|>
-<|im_start|>user
-Analyze these {content_type}s and extract the key developments:
+    BASE_FILTER_HUMAN = """Analyze this tweet and respond with YES if it contains significant AI news or NO if it doesn't:
 
-{content}
-<|im_end|>
-<|im_start|>assistant"""
+{content}"""
 
-class TwitterRules:
-    """Twitter-specific filtering rules and analysis parameters"""
-    
-    FILTER_RULES = """I have a JSON file of tweets. For each tweet, return YES if it mentions:
-•   New developments in AI agents.
-•   Releases of new LLMs (e.g., ChatGPT, Claude, v0, Cursor) or updates from OpenAI/Anthropic
-•   Announcements of models outperforming others or setting new benchmarks or AI Agents
-•   Announcements related to finance, quant or research papers or algorithmic trading
+    BASE_ANALYSIS_SYSTEM = """You are an AI Industry Analyst synthesizing key developments from Twitter content.
 
-Exclude any tweets about courses, tutorials, or general discussions. Return NO for all other tweets."""
+Focus on extracting and summarizing:
+- New AI model launches and capabilities
+- Major company releases and updates
+- Technical breakthroughs and benchmark results
+- Developments in AI-powered finance and trading
+- Significant research findings
 
-    ANALYSIS_FOCUS = """
-- New AI models and capabilities
-- Major releases from AI companies
-- Performance breakthroughs and benchmarks
-- Financial and trading developments"""
+For each important development, structure your response as:
 
-    OUTPUT_FORMAT = """
-SUMMARY: One-line description of the key development
-BY: The Twitter username
-URL: The full tweet URL provided in parentheses"""
+SUMMARY: [Concise description of the key development]
+SOURCE: [Twitter username]
+LINK: [Tweet URL]
+IMPACT: [Brief note on significance]
 
-    EXCLUDE_CONTENT = "tutorials, courses, or general discussions"
+Skip any content about tutorials, courses, or general discussions.
+Separate multiple findings with blank lines.
+"""
+
+    BASE_ANALYSIS_HUMAN = """Analyze these tweets for key AI industry developments:
+
+{content}"""
 
 def create_twitter_config() -> PlatformConfig:
-    """Create Twitter platform configuration"""
+    """Create Twitter platform configuration with chat prompts"""
     
-    # Create Twitter filter prompt
-    filter_prompt = PromptTemplate(
-        input_variables=["content"],
-        template=PromptTemplates.BASE_FILTER.format(
-            platform="Twitter",
-            filter_rules=TwitterRules.FILTER_RULES,
-            content_type="Tweet",
-            content="{content}"
-        )
-    )
+    # Create filter prompt
+    filter_system = SystemMessagePromptTemplate.from_template(PromptTemplates.BASE_FILTER_SYSTEM)
+    filter_human = HumanMessagePromptTemplate.from_template(PromptTemplates.BASE_FILTER_HUMAN)
+    filter_prompt = ChatPromptTemplate.from_messages([filter_system, filter_human])
 
-    # Create Twitter analysis prompt
-    analysis_prompt = PromptTemplate(
-        input_variables=["content"],
-        template=PromptTemplates.BASE_ANALYSIS.format(
-            platform="Twitter",
-            content_type="tweet",
-            analysis_focus=TwitterRules.ANALYSIS_FOCUS,
-            output_format=TwitterRules.OUTPUT_FORMAT,
-            exclude_content=TwitterRules.EXCLUDE_CONTENT,
-            content="{content}"
-        )
-    )
+    # Create analysis prompt
+    analysis_system = SystemMessagePromptTemplate.from_template(PromptTemplates.BASE_ANALYSIS_SYSTEM)
+    analysis_human = HumanMessagePromptTemplate.from_template(PromptTemplates.BASE_ANALYSIS_HUMAN)
+    analysis_prompt = ChatPromptTemplate.from_messages([analysis_system, analysis_human])
 
     return PlatformConfig(
         filter_prompt=filter_prompt,
         analysis_prompt=analysis_prompt,
         port=8000,
         recommended_models={
-            "filter": "qwen2-7b",  # for quick YES/NO
-            "analysis": "qwen2-72b"  # for detailed analysis
+            "filter": "mixtral-8x7b-32768",  # for classification
+            "analysis": "mixtral-8x7b-32768"  # for detailed analysis
         }
     )
 
-TWITTER_CONFIG = create_twitter_config()
+TWITTER_CONFIG=create_twitter_config()

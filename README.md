@@ -26,13 +26,17 @@ pip install -r requirements.txt
 
 ### 2. Model Configuration
 
-Download `qwen2-7b-instruct-q4_k_m.gguf` and place it in the data folder.
+Remove ollama for the time being due to hallucinating results for 4bit models. 
 
-Run the Ollama server to host the Qwen model:
-```
-ollama pull qwen2:72b-instruct-q4_K_S  
-ollama serve  
-```
+~~Download `qwen2-7b-instruct-q4_k_m.gguf` and place it in the data folder.~~
+
+~~Run the Ollama server to host the Qwen model:~~
+~~```~~
+~~ollama pull qwen2:72b-instruct-q4_K_S  ~~
+~~ollama serve  ~~
+~~```~~
+
+- Copy the .env.example to .env and set GROQ_API_KEY
 
 ### 3. Configure Your Settings
 

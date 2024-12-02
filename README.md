@@ -1,6 +1,6 @@
 # FeedFocus: Turn Endless Feeds into Quick Insights
 
-Are you tired of losing hours to endless scrolling on Twitter, LinkedIn, or Reddit? FeedFocus simplifies your day by curating and summarizing the content that matters most to you. Stay updated on AI breakthroughs, industry trends, and niche discussions—all without the noise.
+Are you tired of losing hours to endless scrolling on Twitter? FeedFocus simplifies your day by curating and summarizing the content that matters most to you. Stay updated on AI breakthroughs, industry trends, and niche discussions—all without the noise.
 
 Reclaim your time: FeedFocus transforms hours of browsing into just minutes of actionable updates.
 
@@ -46,11 +46,14 @@ Update the configuration files:
 
 ### 4. Install Browser Extension
 
-Install the Tampermonkey extension for Chrome.
+Install the [Tampermonkey](https://chromewebstore.google.com/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo) extension for Chrome.
 
 •	Copy the script from userscripts/v3.js.
 
 •	Paste it into a new script in Tampermonkey and enable it.
+
+![image](https://github.com/user-attachments/assets/72eb03bd-faa9-4511-ad7b-13ccd83de621)
+![image](https://github.com/user-attachments/assets/fcf4b57c-d28c-47d1-aabe-31609a01d8dd)
 
 ### 5. Run the Server
 
@@ -67,3 +70,15 @@ Or run the below script to automatically press pagedown
 ```
 python press_pgdown.py
 ```
+
+## Demo GIF
+![output](https://github.com/user-attachments/assets/877fcdb9-14be-424d-a62b-71fb23b30b41)
+
+#### Anthropic Claude
+![image](https://github.com/user-attachments/assets/2cd3ca19-5738-42bd-8f43-da22145fc009)
+
+#### Qwen2 72b 4bit gguf
+![image](https://github.com/user-attachments/assets/9a830f81-7143-4f56-af1d-85ba2de3cb7a)
+
+
+

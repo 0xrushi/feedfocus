@@ -230,7 +230,7 @@
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'POST',
-                url: 'http://localhost:8000/completion',
+                url: 'http://127.0.0.1:8000/completion',
                 headers: {
                     'Content-Type': 'application/json'
                 },

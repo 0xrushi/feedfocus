@@ -9,6 +9,7 @@ class PlatformConfig:
     analysis_prompt: ChatPromptTemplate
     port: int
     recommended_models: Dict[str, str]
+    llm_config: dict  # Holds LLM backend info (type, model, url, etc.)
 
 class PromptTemplates:
     """Base templates for content filtering and analysis"""
@@ -76,7 +77,14 @@ def create_twitter_config() -> PlatformConfig:
         port=8000,
         recommended_models={
             "filter": "mixtral-8x7b-32768",  # for classification
-            "analysis": "mixtral-8x7b-32768"  # for detailed analysis
+            "analysis": "mixtral-8x7b-32768",  # for detailed analysis
+            "phi4-mini": "phi4-mini"  # ollama phi4-mini model support
+        },
+        llm_config={
+            "backend": "ollama",  # or 'groq', etc.
+            "model": "phi4-mini",
+            "temperature": 0,
+            "base_url": "http://127.0.0.1:11434"
         }
     )
 

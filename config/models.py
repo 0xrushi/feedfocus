@@ -16,5 +16,14 @@ MODEL_CONFIGS = {
         "temperature_default": 0.3,
         "top_p_default": 0.9,
         "url": "http://localhost:11434/api/generate",
+    },
+    "phi4-mini": {
+        "name": "phi4-mini",
+        "path": "<not needed served by ollama>",
+        "type": "ollama",
+        "max_tokens_default": 1024,
+        "temperature_default": 0.3,
+        "top_p_default": 0.9,
+        "url": "http://localhost:11434/api/generate",
     }
 }

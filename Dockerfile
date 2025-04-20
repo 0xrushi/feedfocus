@@ -33,8 +33,12 @@ RUN python3 -m venv /opt/venv && \
 RUN useradd -m docker && echo "docker:docker" | chpasswd && adduser docker sudo
 
 COPY press_pgdown.py /press_pgdown.py
-RUN chmod -R 777 /press_pgdown.py && chmod +x /press_pgdown.py
+COPY requirements.txt /requirements.txt
 
+RUN chmod -R 777 /press_pgdown.py && chmod +x /press_pgdown.py
+RUN chmod -R 777 /requirements.txt && chmod +x /requirements.txt
+
+RUN /opt/venv/bin/pip install -r /requirements.txt
 
 ENV DISPLAY=:0
 ENV XAUTHORITY=/home/docker/.Xauthority
